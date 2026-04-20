@@ -1,19 +1,63 @@
 ---
-title: PianoSolo2MIDI
-emoji: 🐢
-colorFrom: purple
-colorTo: red
+title: Piano Solo to MIDI
+emoji: 🎹
+colorFrom: gray
+colorTo: blue
 sdk: docker
-pinned: false
-license: mit
-short_description: This allows you to see what notes to play for any piano solo
+app_port: 7860
 ---
 
-Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+# Piano Solo → MIDI
 
-## Faster inference (GPU)
+Streamlit app that transcribes piano audio to MIDI using **Onsets-and-Frames** (ByteDance `piano_transcription_inference`) with optional **CQT** fallback, optional **DeepFilterNet3** denoising, and optional **reference MIDI** evaluation via **mir_eval**.
 
-- **Hardware:** In Space **Settings → Hardware**, pick a **GPU** option (e.g. ZeroGPU or paid GPU) so `torch.cuda.is_available()` is true. CPU-only is much slower than real time.
-- **Code:** `detect_notes_onsets_frames` uses `@spaces.GPU` (package **`spaces`**) so Hugging Face can allocate a GPU for ByteDance O&F when supported.
-- **Note:** [ZeroGPU](https://huggingface.co/docs/hub/spaces-zerogpu) is documented mainly for **Gradio** hosting; Docker/Streamlit Spaces still benefit from **GPU** tiers and CUDA-enabled PyTorch in the image if you add it.
+[Hugging Face Spaces](https://huggingface.co/docs/hub/spaces-sdks-docker) uses the **`Dockerfile`** in this repo (Python 3.10, **ffmpeg**, Streamlit on port **7860**).
 
+## Requirements
+
+- Python 3.9+ (see `requirements.txt`)
+- **ffmpeg** on `PATH` (for MP3/M4A via pydub). The Docker image installs it via `apt`.
+
+## Install (local)
+
+```bash
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+Optional denoise (not in the default `requirements.txt` — larger install): `pip install deepfilternet`.
+
+## Run (local)
+
+```bash
+streamlit run appv2.py
+```
+
+Open the URL shown in the terminal (e.g. `http://localhost:8501`).
+
+## Docker (local test)
+
+```bash
+docker build -t piano-solo2midi .
+docker run --rm -p 7860:7860 piano-solo2midi
+```
+
+Then open `http://localhost:7860`.
+
+## Faster inference (GPU / Hugging Face)
+
+- **Hardware:** In Space **Settings → Hardware**, choose a **GPU** option (e.g. **ZeroGPU** or a paid GPU) so inference is not limited to CPU.
+- **Code:** `detect_notes_onsets_frames` is wrapped with **`@spaces.GPU`** (PyPI package **`spaces`**) with a **dynamic time budget** from clip length, so Hugging Face can attach a GPU for ByteDance O&F when the platform supports it. **PyTorch** uses **`cuda`** when `torch.cuda.is_available()`.
+- **ZeroGPU:** [Official docs](https://huggingface.co/docs/hub/spaces-zerogpu) focus on **Gradio** for *hosting* new ZeroGPU Spaces; Docker + Streamlit can still use **GPU** hardware and benefit from **`spaces`** where supported. If uploads stay on CPU-only wheels, add a **CUDA** PyTorch build to the image for real GPU speedup (see [pytorch.org](https://pytorch.org/get-started/locally/)).
+
+## Features
+
+- Upload **WAV / MP3 / M4A** (max size per file is set in-app).
+- Sidebar: transcription profile, optional polyphony cap, optional DeepFilterNet3.
+- Download **JSON** metadata and **MIDI**.
+- **Optional ground-truth MIDI**: upload `.mid` / `.midi` to compare transcription quality with **mir_eval** (precision / recall / F1).
+
+## License
+
+See project root for license if applicable.
