@@ -43,12 +43,14 @@ MAX_GT_MIDI_BYTES = MAX_GT_MIDI_MB * 1024 * 1024
 
 
 # Configure ffmpeg for pydub: PATH first (Docker/Linux, CI), then Homebrew on macOS.
+_FFMPEG_CONFIGURED = False
 _ffmpeg = shutil.which("ffmpeg")
 _ffprobe = shutil.which("ffprobe")
-if _ffmpeg and _ffprobe:
+if _ffmpeg and _ffprobe and os.path.isfile(_ffmpeg) and os.path.isfile(_ffprobe):
     AudioSegment.converter = _ffmpeg
     AudioSegment.ffmpeg = _ffmpeg
     AudioSegment.ffprobe = _ffprobe
+    _FFMPEG_CONFIGURED = True
 elif sys.platform == "darwin":
     for _base in ("/opt/homebrew/bin", "/usr/local/bin"):
         _f = os.path.join(_base, "ffmpeg")
@@ -57,6 +59,7 @@ elif sys.platform == "darwin":
             AudioSegment.converter = _f
             AudioSegment.ffmpeg = _f
             AudioSegment.ffprobe = _p
+            _FFMPEG_CONFIGURED = True
             break
 
 
@@ -1946,6 +1949,13 @@ def main():
        "**DeepFilterNet3** is optional; then **Onsets-and-Frames** or **CQT**."
    )
    st.caption(f"Maximum upload size: **{MAX_UPLOAD_MB} MB** per file.")
+   if not _FFMPEG_CONFIGURED:
+       st.warning(
+           "**ffmpeg** / **ffprobe** not found on this system. "
+           "**MP3** and **M4A** uploads may fail to convert; **WAV** is unaffected. "
+           "Install ffmpeg and ensure it is on your `PATH` "
+           "(e.g. `brew install ffmpeg` on macOS, or `apt install ffmpeg` on Linux)."
+       )
    st.markdown("---")
 
 
