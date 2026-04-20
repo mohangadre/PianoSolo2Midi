@@ -1,8 +1,10 @@
 FROM python:3.10-slim
 
+# wget: piano_transcription_inference fetches .pth checkpoints at first run
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     libsndfile1 \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
