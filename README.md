@@ -45,12 +45,6 @@ docker run --rm -p 7860:7860 piano-solo2midi
 
 Then open `http://localhost:7860`.
 
-## Faster inference (GPU / Hugging Face)
-
-- **Hardware:** In Space **Settings → Hardware**, choose a **GPU** option (e.g. **ZeroGPU** or a paid GPU) so inference is not limited to CPU.
-- **Code:** `detect_notes_onsets_frames` is wrapped with **`@spaces.GPU`** (PyPI package **`spaces`**) with a **dynamic time budget** from clip length, so Hugging Face can attach a GPU for ByteDance O&F when the platform supports it. **PyTorch** uses **`cuda`** when `torch.cuda.is_available()`.
-- **ZeroGPU:** [Official docs](https://huggingface.co/docs/hub/spaces-zerogpu) focus on **Gradio** for *hosting* new ZeroGPU Spaces; Docker + Streamlit can still use **GPU** hardware and benefit from **`spaces`** where supported. If uploads stay on CPU-only wheels, add a **CUDA** PyTorch build to the image for real GPU speedup (see [pytorch.org](https://pytorch.org/get-started/locally/)).
-
 ## Features
 
 - Upload **WAV / MP3 / M4A** (max size per file is set in-app).
