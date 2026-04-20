@@ -1,5 +1,5 @@
-# Hugging Face Spaces (Docker) + local dev — appv2 Streamlit piano→MIDI
-# Optional extras: deepfilternet (denoise), tensorflow+crepe (not used by appv2 ONNX path)
+# Hugging Face Spaces (Docker) + local — appv2 Streamlit piano→MIDI
+# Use PyPI name piano-transcription-inference (hyphens). Pin torch to shrink image / RAM.
 
 streamlit>=1.40.0
 librosa==0.10.1
@@ -8,8 +8,8 @@ pretty_midi==0.2.10
 pydub==0.25.1
 soundfile==0.12.1
 scipy==1.11.3
-torch>=2.0.0
-piano_transcription_inference>=0.0.5
+torch==2.0.0
+piano-transcription-inference>=0.0.5
 basic-pitch>=0.2.0
 onnxruntime>=1.15.0
 mir_eval>=0.7
