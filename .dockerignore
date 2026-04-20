@@ -1,0 +1,11 @@
+.git
+.gitignore
+.venv
+venv
+__pycache__
+*.pyc
+*.wav
+*.mp3
+*.m4a
+*.logicx
+.env

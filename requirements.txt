@@ -1,28 +1,15 @@
-# MUSICGEN — appv2 (Streamlit piano→MIDI) + multitest (YAMNet routing).
-# Install: pip install -r requirements.txt
-#
-# CREPE's setup.py imports pkg_resources — use setuptools < 82 (82+ dropped it).
-# If crepe still fails: pip install crepe --no-build-isolation
-setuptools>=65.0,<82.0.0
-wheel
-packaging>=23.0,<24.0
-# Streamlit ≥1.40 (protobuf 5–6). Avoid TF 2.20 on macOS: PyArrow+TF mutex — use 2.19.x.
+# Hugging Face Spaces (Docker) + local dev — appv2 Streamlit piano→MIDI
+# Optional extras: deepfilternet (denoise), tensorflow+crepe (not used by appv2 ONNX path)
+
 streamlit>=1.40.0
-# Optional stem separation (multitest.py only): pip install demucs
 librosa==0.10.1
+numpy>=1.24.3,<2
 pretty_midi==0.2.10
 pydub==0.25.1
 soundfile==0.12.1
 scipy==1.11.3
-numpy>=1.24.3,<2
 torch>=2.0.0
 piano_transcription_inference>=0.0.5
-deepfilternet>=0.5.6
-# multitest: YAMNet — TF 2.20 + PyArrow often aborts on macOS; use 2.19.x + tf-keras match
-tensorflow>=2.19.0,<2.20.0
-tf-keras>=2.19.0,<2.20.0
-tensorflow-hub>=0.15.0
-crepe>=0.0.12
 basic-pitch>=0.2.0
 onnxruntime>=1.15.0
 mir_eval>=0.7

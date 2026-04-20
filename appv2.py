@@ -6,6 +6,7 @@ import json
 import tempfile
 import os
 import sys
+import shutil
 from pathlib import Path
 import pretty_midi
 from datetime import datetime
@@ -41,13 +42,22 @@ MAX_GT_MIDI_MB = 5
 MAX_GT_MIDI_BYTES = MAX_GT_MIDI_MB * 1024 * 1024
 
 
-# Configure ffmpeg path for pydub
-AudioSegment.converter = "/opt/homebrew/bin/ffmpeg"
-AudioSegment.ffmpeg = "/opt/homebrew/bin/ffmpeg"
-AudioSegment.ffprobe = "/opt/homebrew/bin/ffprobe"
-
-# Instead of hardcoding the ffmpeg path, we could also implement a check to see if ffmpeg is available in the system PATH and use it directly. Right now, running this locally causes no issues, but would break on some machines upon deployment, specifically for MP3 and M4A files. WAV files remain unaffected as they skip the pydub conversion.
-# Using a dynamic configuration approach would make the code more portable across different environments without requiring users to modify the code for their specific ffmpeg installation.
+# Configure ffmpeg for pydub: PATH first (Docker/Linux, CI), then Homebrew on macOS.
+_ffmpeg = shutil.which("ffmpeg")
+_ffprobe = shutil.which("ffprobe")
+if _ffmpeg and _ffprobe:
+    AudioSegment.converter = _ffmpeg
+    AudioSegment.ffmpeg = _ffmpeg
+    AudioSegment.ffprobe = _ffprobe
+elif sys.platform == "darwin":
+    for _base in ("/opt/homebrew/bin", "/usr/local/bin"):
+        _f = os.path.join(_base, "ffmpeg")
+        _p = os.path.join(_base, "ffprobe")
+        if os.path.isfile(_f) and os.path.isfile(_p):
+            AudioSegment.converter = _f
+            AudioSegment.ffmpeg = _f
+            AudioSegment.ffprobe = _p
+            break
 
 
 
