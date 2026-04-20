@@ -17,6 +17,9 @@ from collections import Counter
 from scipy.signal import find_peaks
 import soundfile as sf
 import io
+import torch
+
+torch.set_num_threads(4)
 
 try:
     st.set_page_config(
@@ -40,6 +43,8 @@ MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 # Ground-truth MIDI is tiny; keep a separate cap for clarity.
 MAX_GT_MIDI_MB = 5
 MAX_GT_MIDI_BYTES = MAX_GT_MIDI_MB * 1024 * 1024
+# Analysis uses only the first N seconds to avoid long-running inference (esp. on CPU).
+MAX_AUDIO_DURATION_SEC = 60
 
 
 # Configure ffmpeg for pydub: PATH first (Docker/Linux, CI), then Homebrew on macOS.
@@ -1499,12 +1504,26 @@ def analyze_audio(
        duration = len(y) / sr
        logger.info(f"Loaded: {len(y)} samples, {sr} Hz, {duration:.2f}s")
 
+       _orig_duration_sec = float(duration)
+       if duration > MAX_AUDIO_DURATION_SEC:
+           _keep = int(MAX_AUDIO_DURATION_SEC * sr)
+           y = y[:_keep]
+           duration = len(y) / sr
+           logger.info(
+               "Truncated input from %.2fs to first %ds for analysis.",
+               _orig_duration_sec, MAX_AUDIO_DURATION_SEC,
+           )
+
 
        if wav_path and os.path.exists(wav_path):
            os.unlink(wav_path)
 
 
        preprocess_log = ["Raw mix (no stem isolation)"]
+       if _orig_duration_sec > MAX_AUDIO_DURATION_SEC:
+           preprocess_log.append(
+               f"Truncated to first {MAX_AUDIO_DURATION_SEC}s (max analysis length)"
+           )
 
        y_pre_deepfilter = np.asarray(y, dtype=np.float32).copy()
        used_deepfilter_output = False
@@ -1948,7 +1967,10 @@ def main():
        "**Dense mix / orchestral** if needed. "
        "**DeepFilterNet3** is optional; then **Onsets-and-Frames** or **CQT**."
    )
-   st.caption(f"Maximum upload size: **{MAX_UPLOAD_MB} MB** per file.")
+   st.caption(
+       f"Maximum upload size: **{MAX_UPLOAD_MB} MB** per file. "
+       f"Only the **first {MAX_AUDIO_DURATION_SEC} seconds** of each file are transcribed."
+   )
    if not _FFMPEG_CONFIGURED:
        st.warning(
            "**ffmpeg** / **ffprobe** not found on this system. "
@@ -1966,7 +1988,8 @@ def main():
        accept_multiple_files=True,
        help=(
            f"Upload one or more audio files (.wav, .mp3, or .m4a). "
-           f"Max {MAX_UPLOAD_MB} MB per file."
+           f"Max {MAX_UPLOAD_MB} MB per file; analysis uses the first "
+           f"{MAX_AUDIO_DURATION_SEC}s only."
        ),
    )
 
@@ -2248,7 +2271,8 @@ def main():
        **appv2** — optional **DeepFilterNet3** → piano transcription → MIDI.
 
 
-       **Supported formats:** WAV, MP3, M4A (max **{MAX_UPLOAD_MB} MB** per file)
+       **Supported formats:** WAV, MP3, M4A (max **{MAX_UPLOAD_MB} MB** per file;
+       first **{MAX_AUDIO_DURATION_SEC}s** transcribed)
 
 
        **Pipeline:**
