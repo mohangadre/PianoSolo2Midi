@@ -1054,6 +1054,27 @@ def _cap_polyphony_at_onsets(note_events, window_sec=0.05, max_notes=8):
    return [ev for i, ev in enumerate(note_events) if i not in drop]
 
 
+def _onset_frames_gpu_duration(
+   y,
+   sr,
+   transcription_profile="standard",
+   max_polyphony_per_onset=0,
+):
+   """Hugging Face ZeroGPU dynamic duration budget (seconds) vs clip length."""
+   secs = float(len(y)) / float(sr) if sr and len(y) else 60.0
+   return max(90, min(900, int(secs * 15 + 90)))
+
+
+try:
+   _spaces_gpu = __import__("spaces").GPU
+except ImportError:
+   def _spaces_gpu(**_kwargs):
+       def _identity(fn):
+           return fn
+       return _identity
+
+
+@_spaces_gpu(duration=_onset_frames_gpu_duration)
 def detect_notes_onsets_frames(
    y,
    sr,
@@ -1099,8 +1120,9 @@ def detect_notes_onsets_frames(
    else:
        y_rs = y
 
-   transcriptor = PianoTranscription(device=torch.device('cpu'),
-                                     checkpoint_path=None)
+   _dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+   logger.info("O&F inference device: %s", _dev)
+   transcriptor = PianoTranscription(device=_dev, checkpoint_path=None)
    transcriptor.onset_threshold = OF_ONSET_TH
    transcriptor.frame_threshold = OF_FRAME_TH
 
